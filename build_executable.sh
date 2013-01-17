@@ -1,3 +1,103 @@
 #!/bin/bash
 
+
+
 #============= Nightly Build Script - Eventric 2013 ===============#
+
+# global variables
+repoDir="repo/"
+clientPath="repo/src/"
+sdkPath="sdk/"
+appXML="main-app.xml"
+gearheadPath="repo/src/assets/skins/gearhead"
+mxmlcPath="sdk/bin/mxmlc"
+amxmlcPath="sdk/bin/amxmlc"
+adtPath="sdk/bin/adt"
+certPath="EventricCert.p12"
+finalAppPath="MasterTour.app"
+masterTourSWF="main.swf"
+assetsPath="assets"
+iconsPath="icons"
+mainMXML="repo/src/main.mxml"
+logFile="log.txt"
+errorLogFile="errorlog.txt"
+repoUsername=$1
+repoPassword=$2
+signingCertPassword=$3
+checkSVNSuccess=`egrep "revision" $logFile`
+
+
+# pre-build commands:
+echo ">> Clearing out last night's logs..."
+echo "" > $logFile
+echo "" > $errorLogFile
+
+echo ">> Cleaning up last night's build..."
+rm $finalAppPath
+rm $masterTourSWF
+cd $gearheadPath
+rm *.swf
+cd ../../../../../
+
+
+# check that an sdk is included
+# TODO
+chmod -R 0777 $sdkPath
+
+
+# check if the repo has been checked out before:
+cd $repoDir
+if [ -d "src" ]; then
+	echo ">> Running SVN Update..."
+	svn up >> "../"$logFile
+else
+	# otherwise, check it out freshly
+	echo ">> Checking out fresh from SVN..."
+	svn co https://eventric.svn.beanstalkapp.com/mtdclient/trunk/mastertour --username $repoUsername --password $repoPassword . >> "../"$logFile
+fi
+cd ..
+
+# verify svn worked properly
+newVersion=`echo $checkSVNSuccess | awk -F"revision " '{print $2}' | awk -F"." '{print $1}'`
+echo ">> Version from SVN is: $newVersion"
+
+if [ ! -n "$newVersion" ]; then
+	echo $logFile > $errorLogFile
+	exit 1
+fi
+
+
+# find and replace the version number with the new version
+echo ">> Opening main-app.xml for write, updating the versionNumber for the app..."
+# chmod -R 0777 $clientPath
+currentVersion=`egrep "<versionNumber>" $appXML`
+version=`echo $currentVersion | awk -F"<versionNumber>" '{print $2}' | awk -F"</versionNumber>" '{print $1}'`
+find $appXML -type f | xargs perl -pi -e "s/"$version"/"1.2.$newVersion"/g"
+echo ">> App version number updated to $version"
+
+
+# compile all style sheets into accessible swf files
+echo ">> Compiling stylesheets..."
+for css in `find $gearheadPath -name '*.css'`
+do
+	sh $mxmlcPath -load-config+=config.xml $css >> $logFile
+
+	#verify the style sheet swf file was created
+	# TODO
+done
+
+
+# compile the main mtdclient swf file
+echo ">> Compiling Master Tour..."
+cd $clientPath
+../../$amxmlcPath -compatibility-version=3.0.0 -managers flash.fonts.AFEFontManager -load-config+=../../config.xml ../../$mainMXML >> ../../$logFile
+
+# verify the main.swf file was created
+# TODO
+
+
+# package and build the app
+echo ">> Bundling MasterTour.air..."
+../../$adtPath -package -storetype PKCS12 -keystore ../../$certPath -storepass $signingCertPassword -target bundle $finalAppPath ../../main-app.xml $masterTourSWF $assetsPath $iconsPath
+
+
