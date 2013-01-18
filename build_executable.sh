@@ -7,6 +7,7 @@
 # global variables
 repoDir="repo/"
 clientPath="repo/src/"
+buildPath="build/"
 sdkPath="sdk/"
 appXML="main-app.xml"
 gearheadPath="repo/src/assets/skins/gearhead"
@@ -33,6 +34,9 @@ echo "" > $logFile
 echo "" > $errorLogFile
 
 echo ">> Cleaning up last night's build..."
+cd $buildPath
+rm -rf *.app
+cd ../
 
 if [ -d $clientPath ]; then
 	cd $clientPath
@@ -105,6 +109,12 @@ cd $clientPath
 
 # package and build the app
 echo ">> Bundling MasterTour.app..."
-../../$adtPath -package -storetype PKCS12 -keystore ../../$certPath -storepass $signingCertPassword -target bundle $finalAppPath ../../main-app.xml $masterTourSWF $assetsPath $iconsPath
+../../$adtPath -package -storetype PKCS12 -keystore ../../$certPath -storepass $signingCertPassword -target bundle "MasterTour-"$version".app" ../../main-app.xml $masterTourSWF $assetsPath $iconsPath
 
+
+# move the package to the root's build folder
+echo ">> Moving app to build folder..."
+mv "MasterTour-"$version".app" ../../build/"MasterTour-"$version".app"
+
+echo "Nightly Build Complete.\n\n"
 

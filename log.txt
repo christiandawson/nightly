@@ -1,0 +1,17 @@
+
+At revision 495.
+Loading configuration file /Users/eventricsupport/git/nightly/sdk/frameworks/flex-config.xml
+Loading configuration file /Users/eventricsupport/git/nightly/config.xml
+/Users/eventricsupport/git/nightly/repo/src/assets/skins/gearhead/gearhead.swf (365225 bytes)
+Loading configuration file /Users/eventricsupport/git/nightly/sdk/frameworks/flex-config.xml
+Loading configuration file /Users/eventricsupport/git/nightly/config.xml
+/Users/eventricsupport/git/nightly/repo/src/assets/skins/gearhead/gearheadLayout.swf (736546 bytes)
+Loading configuration file /Users/eventricsupport/git/nightly/sdk/frameworks/flex-config.xml
+Loading configuration file /Users/eventricsupport/git/nightly/config.xml
+/Users/eventricsupport/git/nightly/repo/src/assets/skins/gearhead/gearheadNavigator.swf (311813 bytes)
+Loading configuration file /Users/eventricsupport/git/nightly/sdk/frameworks/flex-config.xml
+Loading configuration file /Users/eventricsupport/git/nightly/config.xml
+/Users/eventricsupport/git/nightly/repo/src/assets/skins/gearhead/gearheadPrinting.swf (343460 bytes)
+Loading configuration file /Users/eventricsupport/git/nightly/sdk/frameworks/air-config.xml
+Loading configuration file /Users/eventricsupport/git/nightly/config.xml
+/Users/eventricsupport/git/nightly/repo/src/main.swf (4737019 bytes)
