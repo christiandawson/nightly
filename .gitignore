@@ -1,3 +1,5 @@
 # Build and Release Folders
 sdk/
 repo/
+log.txt
+errorlog.txt

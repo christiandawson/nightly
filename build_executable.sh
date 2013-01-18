@@ -33,12 +33,19 @@ echo "" > $logFile
 echo "" > $errorLogFile
 
 echo ">> Cleaning up last night's build..."
-rm $finalAppPath
-rm $masterTourSWF
-cd $gearheadPath
-rm *.swf
-cd ../../../../../
 
+if [ -d $clientPath ]; then
+	cd $clientPath
+	rm $masterTourSWF
+	rm -rf $finalAppPath
+	cd ../../
+fi
+
+if [ -d $gearheadPath ]; then
+	cd $gearheadPath
+	rm *.swf
+	cd ../../../../../
+fi
 
 # check that an sdk is included
 # TODO
@@ -62,7 +69,7 @@ newVersion=`echo $checkSVNSuccess | awk -F"revision " '{print $2}' | awk -F"." '
 echo ">> Version from SVN is: $newVersion"
 
 if [ ! -n "$newVersion" ]; then
-	echo $logFile > $errorLogFile
+	echo $logFile >> $errorLogFile
 	exit 1
 fi
 
@@ -80,7 +87,7 @@ echo ">> App version number updated to $version"
 echo ">> Compiling stylesheets..."
 for css in `find $gearheadPath -name '*.css'`
 do
-	sh $mxmlcPath -load-config+=config.xml $css >> $logFile
+	sh $mxmlcPath -compatibility-version=3.0.0 -load-config+=config.xml $css >> $logFile
 
 	#verify the style sheet swf file was created
 	# TODO
@@ -97,7 +104,7 @@ cd $clientPath
 
 
 # package and build the app
-echo ">> Bundling MasterTour.air..."
+echo ">> Bundling MasterTour.app..."
 ../../$adtPath -package -storetype PKCS12 -keystore ../../$certPath -storepass $signingCertPassword -target bundle $finalAppPath ../../main-app.xml $masterTourSWF $assetsPath $iconsPath
 
 
