@@ -101,7 +101,7 @@ done
 # compile the main mtdclient swf file
 echo ">> Compiling Master Tour..."
 cd $clientPath
-../../$amxmlcPath -compatibility-version=3.0.0 -managers flash.fonts.AFEFontManager -load-config+=../../config.xml ../../$mainMXML >> ../../$logFile
+sh ../../$amxmlcPath -compatibility-version=3.0.0 -managers flash.fonts.AFEFontManager -load-config+=../../config.xml ../../$mainMXML >> ../../$logFile
 
 # verify the main.swf file was created
 # TODO
@@ -109,7 +109,7 @@ cd $clientPath
 
 # package and build the app
 echo ">> Bundling MasterTour.app..."
-../../$adtPath -package -storetype PKCS12 -keystore ../../$certPath -storepass $signingCertPassword -target bundle "MasterTour-"$version".app" ../../main-app.xml $masterTourSWF $assetsPath $iconsPath
+sh ../../$adtPath -package -storetype PKCS12 -keystore ../../$certPath -storepass $signingCertPassword -target bundle "MasterTour-"$version".app" ../../main-app.xml $masterTourSWF $assetsPath $iconsPath
 
 
 # move the package to the root's build folder
