@@ -35,12 +35,13 @@ echo "" > $errorLogFile
 
 echo ">> Cleaning up last night's build..."
 cd $buildPath
-rm -rf *.app
+rm -rf *.pkg
 cd ../
 
 if [ -d $clientPath ]; then
 	cd $clientPath
 	rm $masterTourSWF
+	rm -rf *.app
 	rm -rf $finalAppPath
 	cd ../../
 fi
@@ -112,9 +113,18 @@ echo ">> Bundling MasterTour.app..."
 sh ../../$adtPath -package -storetype PKCS12 -keystore ../../$certPath -storepass $signingCertPassword -target bundle "MasterTour-"$version".app" ../../main-app.xml $masterTourSWF $assetsPath $iconsPath
 
 
+# code signing the app
+echo ">> Code Signing the App..."
+chmod -R 777 "MasterTour-"$version".app"
+codesign -f -s "Developer ID Application: Eventric LLC" "MasterTour-"$version".app"
+
+echo ">> Packaging Install_Master_Tour.pkg..."
+productbuild --component "MasterTour-"$version".app" /Applications "MasterTour-"$version".pkg" --sign "Developer ID Installer: Eventric LLC" >> ../../$logFile
+
+
 # move the package to the root's build folder
 echo ">> Moving app to build folder..."
-mv "MasterTour-"$version".app" ../../build/"MasterTour-"$version".app"
+mv "MasterTour-"$version".pkg" ../../build/"MasterTour-"$version".pkg"
 
 echo "Nightly Build Complete.\n\n"
 
