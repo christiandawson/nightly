@@ -25,7 +25,6 @@ errorLogFile="errorlog.txt"
 repoUsername=$1
 repoPassword=$2
 signingCertPassword=$3
-checkSVNSuccess=`egrep "revision" $logFile`
 
 
 # pre-build commands:
@@ -53,7 +52,12 @@ if [ -d $gearheadPath ]; then
 fi
 
 # check that an sdk is included
-# TODO
+if [ ! -d "$sdkPath/bin" ]; then
+	echo "Flex SDK is missing or corrupted, the build cannot continue. Exiting Build..." >> $errorLogFile
+	echo "Flex SDK is missing or corrupted, the build cannot continue. Exiting Build..."
+	exit 1
+fi
+
 chmod -R 0777 $sdkPath
 
 
@@ -70,13 +74,16 @@ fi
 cd ..
 
 # verify svn worked properly
+checkSVNSuccess=`egrep "revision" $logFile`
 newVersion=`echo $checkSVNSuccess | awk -F"revision " '{print $2}' | awk -F"." '{print $1}'`
-echo ">> Version from SVN is: $newVersion"
 
 if [ ! -n "$newVersion" ]; then
-	echo $logFile >> $errorLogFile
+	echo "Value of SVN's version was: $newVersion, which is invalid. Exiting build..."  >> $errorLogFile
+	echo "Value of SVN's version was: $newVersion, which is invalid. Exiting build..."
 	exit 1
 fi
+
+echo ">> Version from SVN is: $newVersion"
 
 
 # find and replace the version number with the new version
@@ -95,7 +102,13 @@ do
 	sh $mxmlcPath -compatibility-version=3.0.0 -load-config+=config.xml $css >> $logFile
 
 	#verify the style sheet swf file was created
-	# TODO
+	rootName=$(echo $css | cut -d'.' -f 1)
+
+	if [ ! -f "$rootName.swf" ]; then
+		echo "$nameSplit was not created successfully. Exiting Build..." >> $errorLogFile
+		echo "$nameSplit was not created successfully. Exiting Build..."
+		exit 1
+	fi
 done
 
 
@@ -105,12 +118,33 @@ cd $clientPath
 sh ../../$amxmlcPath -compatibility-version=3.0.0 -managers flash.fonts.AFEFontManager -load-config+=../../config.xml ../../$mainMXML >> ../../$logFile
 
 # verify the main.swf file was created
-# TODO
+if [ ! -f $masterTourSWF ]; then
+	echo "$masterTourSWF was not created successfully. Exiting Build..." >> $errorLogFile
+	echo "$masterTourSWF was not created successfully. Exiting Build..."
+	exit 1
+fi
 
 
 # package and build the app
 echo ">> Bundling MasterTour.app..."
 sh ../../$adtPath -package -storetype PKCS12 -keystore ../../$certPath -storepass $signingCertPassword -target bundle "MasterTour-"$version".app" ../../main-app.xml $masterTourSWF $assetsPath $iconsPath
+
+# verify the MasterTour-(version).app file was created
+if [ ! -d "MasterTour-"$version".app" ]; then
+	echo "MasterTour-"$version".app was not created successfully. Exiting Build..." >> $errorLogFile
+	echo "MasterTour-"$version".app was not created successfully. Exiting Build..."
+	exit 1
+fi
+
+# HACK: This walks into the contents of MT.app and symbolically links the resources, otherwise they're triplicated,
+# causing a build that's bloated to almost 2x it's normal size
+cd "MasterTour-$version.app/Contents/Frameworks/Adobe AIR.framework"
+rm -rf "$(pwd)/Resources"
+ln -s "$(pwd)/Versions/1.0/Resources/" "$(pwd)/Resources"
+rm -rf "$(pwd)/Versions/Current"
+ln -s "$(pwd)/Versions/1.0/" "$(pwd)/Versions/Current"
+cd ../../../../
+#TODO: check that these links exist
 
 
 # code signing the app
@@ -121,10 +155,23 @@ codesign -f -s "Developer ID Application: Eventric LLC" "MasterTour-"$version".a
 echo ">> Packaging Install_Master_Tour.pkg..."
 productbuild --component "MasterTour-"$version".app" /Applications "MasterTour-"$version".pkg" --sign "Developer ID Installer: Eventric LLC" >> ../../$logFile
 
+if [ ! -f "MasterTour-"$version".pkg" ]; then
+	echo "MasterTour-"$version".pkg was not created successfully. Exiting Build..." >> ../../$errorLogFile
+	echo "MasterTour-"$version".pkg was not created successfully. Exiting Build..."
+	exit 1
+fi
+
 
 # move the package to the root's build folder
 echo ">> Moving app to build folder..."
 mv "MasterTour-"$version".pkg" ../../build/"MasterTour-"$version".pkg"
+
+if [ ! -f ../../build/MasterTour-$version.pkg ]; then
+	echo "MasterTour-"$version".pkg was not moved from repo/src successfully. Exiting Build..." >> ../../$errorLogFile
+	echo "MasterTour-"$version".pkg was not moved from repo/src successfully. Exiting Build..."
+	exit 1
+fi
+
 
 echo "Nightly Build Complete.\n\n"
 
