@@ -34,7 +34,7 @@ echo "" > $errorLogFile
 
 echo ">> Cleaning up last night's build..."
 cd $buildPath
-rm -rf *.pkg
+rm -rf *.tar.gz
 cd ../
 
 if [ -d $clientPath ]; then
@@ -138,37 +138,53 @@ fi
 
 # HACK: This walks into the contents of MT.app and symbolically links the resources, otherwise they're triplicated,
 # causing a build that's bloated to almost 2x it's normal size
+chmod -R 777 "MasterTour-"$version".app"
 cd "MasterTour-$version.app/Contents/Frameworks/Adobe AIR.framework"
 rm -rf "$(pwd)/Resources"
+chmod -R 777 "$(pwd)/Versions/1.0/Resources/"
+echo ">> Linking $(pwd)/Versions/1.0/Resources/ subfolder..."
 ln -s "$(pwd)/Versions/1.0/Resources/" "$(pwd)/Resources"
+if [ ! -d "$(pwd)/Resources" ]; then
+	echo ">> ERROR OCCURRED 2"
+	rm -f "$(pwd)/Resources"
+	ln -s "$(pwd)/Versions/1.0/Resources/" "$(pwd)/Resources"
+fi
+
 rm -rf "$(pwd)/Versions/Current"
+chmod -R 777 "$(pwd)/Versions/1.0/"
+echo ">> Linking $(pwd)/Versions/1.0/ subfolder..."
 ln -s "$(pwd)/Versions/1.0/" "$(pwd)/Versions/Current"
+if [ ! -d "$(pwd)/Versions/Current" ]; then
+	echo ">> ERROR OCCURRED 2"
+	rm -f "$(pwd)/Versions/Current"
+	ln -s "$(pwd)/Versions/1.0/" "$(pwd)/Versions/Current"
+fi
 cd ../../../../
 #TODO: check that these links exist
 
 
 # code signing the app
 echo ">> Code Signing the App..."
-chmod -R 777 "MasterTour-"$version".app"
-codesign -f -s "Developer ID Application: Eventric LLC" "MasterTour-"$version".app"
+codesign -f -s "Developer ID Application: Eventric LLC" "MasterTour-"$version".app" >> ../../$logFile
 
-echo ">> Packaging Install_Master_Tour.pkg..."
-productbuild --component "MasterTour-"$version".app" /Applications "MasterTour-"$version".pkg" --sign "Developer ID Installer: Eventric LLC" >> ../../$logFile
+echo ">> Zipping up MasterTour-$version.tar.gz..."
+#productbuild --component "MasterTour-"$version".app" /Applications "MasterTour-"$version".pkg" --sign "Developer ID Installer: Eventric LLC" >> ../../$logFile
+tar -zcvf ./MasterTour-$version.tar.gz MasterTour-$version.app/ >> ../../$logFile
 
-if [ ! -f "MasterTour-"$version".pkg" ]; then
-	echo "MasterTour-"$version".pkg was not created successfully. Exiting Build..." >> ../../$errorLogFile
-	echo "MasterTour-"$version".pkg was not created successfully. Exiting Build..."
+if [ ! -f "MasterTour-"$version".tar.gz" ]; then
+	echo "MasterTour-"$version".tar.gz was not created successfully. Exiting Build..." >> ../../$errorLogFile
+	echo "MasterTour-"$version".tar.gz was not created successfully. Exiting Build..."
 	exit 1
 fi
 
 
 # move the package to the root's build folder
 echo ">> Moving app to build folder..."
-mv "MasterTour-"$version".pkg" ../../build/"MasterTour-"$version".pkg"
+mv "MasterTour-"$version".tar.gz" ../../build/"MasterTour-"$version".tar.gz"
 
-if [ ! -f ../../build/MasterTour-$version.pkg ]; then
-	echo "MasterTour-"$version".pkg was not moved from repo/src successfully. Exiting Build..." >> ../../$errorLogFile
-	echo "MasterTour-"$version".pkg was not moved from repo/src successfully. Exiting Build..."
+if [ ! -f ../../build/MasterTour-$version.tar.gz ]; then
+	echo "MasterTour-"$version".tar.gz was not moved from repo/src successfully. Exiting Build..." >> ../../$errorLogFile
+	echo "MasterTour-"$version".tar.gz was not moved from repo/src successfully. Exiting Build..."
 	exit 1
 fi
 
